@@ -1,1 +1,1 @@
-print('Welcome to the Project!')
+print('Welcome to the project!')
