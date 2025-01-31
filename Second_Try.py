@@ -14,16 +14,16 @@ driver = webdriver.Chrome(service=service)
 url = 'https://avia.tutu.ru/'
 
 driver.get(url)
-time.sleep(3)
+# time.sleep(3)
 
 # Парсинг информации по направлению Тюмень - Новый Уренгой
 origin = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[2]/div/div/div/div/div/div[1]/div/div[1]/div[1]/div/div[1]/span/div/div/input')
-origin.click()
+# origin.click()
 origin.send_keys('Тюмень')
 time.sleep(1)
 
 destination = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[2]/div/div/div/div/div/div[1]/div/div[1]/div[2]/div/div[1]/span/div/div/input')
-destination.click()
+# destination.click()
 destination.send_keys('Новый Уренгой')
 time.sleep(1)
 
@@ -37,7 +37,20 @@ time.sleep(1)
 
 search = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[2]/div/div/div/div/div/div[2]/div[2]/div/button/div/div')
 search.click()
-time.sleep(10)
+
+"""
+Заменил обычный sleep на WebDriverWait
+В качестве первого аргумента нужно передавать драйвер. Дальше - время ожидания.
+Опционально можно ещё добавить частоту обновления (в секундах) и игнорирование ошибок.
+
+Пример: WebDriverWait(driver, timeout=20, poll_frequency=2, ignored_exceptions=[NoSuchElementException]
+Ошибку нужно будет заранее импортировать, как и любой другой элемент из библиотеки.
+from selenium.common.exceptions import NoSuchElementException
+"""
+
+wait = WebDriverWait(driver, 10)
+wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '._19j5UevMdTcHGRMJLu4Wtd.o-text-inline.o-text-paragraphSmall')))
+# time.sleep(10)
 
 # Поиск элементов
 airlines = driver.find_elements(By.CSS_SELECTOR, '._19j5UevMdTcHGRMJLu4Wtd.o-text-inline.o-text-paragraphSmall')
@@ -50,6 +63,7 @@ flights_by_date = {}
 min_prices_by_date = {}
 flights = []
 
+
 # Функция для очистки ценовых данных от символов, неадекватно отображающихся в консоли
 # (тонкие пробелы, символы рубля и символы нулевой ширины)
 def clean_price(price):
@@ -57,8 +71,10 @@ def clean_price(price):
     cleaned_price = cleaned_price.replace('\u20BD', '')
     return cleaned_price
 
+
 for i in range(len(airlines)):
-    flight_info = {}
+
+    flight_info = dict()
     flight_info['Авиакомпания'] = airlines[i].text
     flight_info['Время отправления'] = departures[i].text
     flight_info['Время прибытия'] = arrivals[i].text
