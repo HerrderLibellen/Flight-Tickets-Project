@@ -30,7 +30,7 @@ for av, ap in routes:
 
 # Генерация списка дат
 initial_date = datetime.today()  # Точка отсчёта
-end_date = initial_date + timedelta(days=3)   # Конечная дата (через три дня)
+end_date = initial_date + timedelta(days=90)   # Конечная дата (через три месяца)
 
 # Список дат, по которому будет проходить парсер
 date_list = []
