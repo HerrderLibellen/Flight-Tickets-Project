@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime, timedelta
 import time
@@ -107,7 +107,7 @@ for route in directions:
             time.sleep(7)  # Ожидание загрузки новых элементов
 
             # Повторный поиск элементов
-            flights = driver.find_elements(By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')
+            driver.find_elements(By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')
 
             # Сбор данных для каждого рейса
             for flight in flights:
@@ -154,6 +154,21 @@ for route in directions:
 
 # Сохранение данных в CSV файл
 flights_df = pd.DataFrame(flights_data)
+
+# Сокращённые и полные названия аэропортов
+airports_dict = {
+    'РЩН': 'Рощино',
+    'НУР': 'Новый Уренгой',
+    'ДМД': 'Домодедово',
+    'УФА': 'Уфа',
+    'МРВ': 'Минеральные Воды',
+    'СОЧ': 'Сочи'
+}
+
+# Инвертируем словарь для замены полных названий на сокращения
+inverted_airports_dict = {v: k for k, v in airports_dict.items()}
+flights_df['Аэропорт вылета'] = flights_df['Аэропорт вылета'].map(inverted_airports_dict)
+flights_df['Аэропорт прилёта'] = flights_df['Аэропорт прилёта'].map(inverted_airports_dict)
 flights_df.to_csv('TuTu_Flights.csv', index=False, encoding='utf-8')
 
 # Закрытие драйвера
