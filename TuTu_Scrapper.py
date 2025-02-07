@@ -33,7 +33,7 @@ initial_date = datetime.today()  # Точка отсчёта
 end_date = initial_date + timedelta(days=90)   # Конечная дата (через три месяца)
 
 # Список дат, по которому будет проходить парсер
-date_list = []
+date_list = list()
 current_date = initial_date
 while current_date <= end_date:
     date_list.append(current_date)
@@ -90,6 +90,7 @@ for route in directions:
             prices = list()
             flight_companies = list()
             ports = list()
+            times = list()
 
             # Формируем URL для текущей даты, заменяя 8-значную подстроку из цифр актуальной датой
             url = driver.current_url
@@ -100,14 +101,14 @@ for route in directions:
 
             # Ожидание появления всех рейсов
             wait = WebDriverWait(driver, 30)
-            flights = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')))
+            wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')))
 
             # Прокручиваем страницу вниз, иначе парсер рискует не увидеть все видимые веб-элементы рейсов на странице
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(7)  # Ожидание загрузки новых элементов
 
             # Повторный поиск элементов
-            driver.find_elements(By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')
+            flights = driver.find_elements(By.CLASS_NAME, '_3fTfvjX4bphQxDYxgAddwX')
 
             # Сбор данных для каждого рейса
             for flight in flights:
@@ -125,6 +126,7 @@ for route in directions:
 
                 if "Москва" in route and "Домодедово" not in home and "Домодедово" not in away:
                     continue
+
                 ports.append(home)
                 ports.append(away)
                 airlines = [elem.text for elem in flight.find_elements(By.CSS_SELECTOR, '._19j5UevMdTcHGRMJLu4Wtd.o-text-inline.o-text-paragraphSmall')]
@@ -137,16 +139,30 @@ for route in directions:
                         flight_companies.append(airline)
 
                 price = flight.find_element(By.CSS_SELECTOR, '._2Q5MrZ0v-FU4A28a-_xBFr.o-price-nowrap.o-text-inline.o-text-headerMedium.o-text-headerLarge-md').text
-                price = ''.join([i for i in price if i.isdigit()])
+                price = int(''.join([i for i in price if i.isdigit()]))
                 prices.append(price)
+                departure = flight.find_element(By.CSS_SELECTOR,
+                                                'span.UFlg3tcFvqtPw3IuhhhM3[data-ti="departure-time"]').text
+                arrival = flight.find_element(By.CSS_SELECTOR,
+                                              'span._15mC1UzJwjHpnQolp1FCYX.o-text-inline.o-text-headerMedium.o-text-headerLarge-md[data-ti="arrival-time"]').text
+                times.append([departure, arrival])
+            # Выявляем самый дешёвый билет
+            min_price = min(prices) if len(prices) > 0 else 'Нет данных'
+            # Выясняем индекс самой низкой цены из списка всех цен
+            idx = prices.index(min_price) if len(prices) > 0 else 'Нет данных'
+            # Используя индекс, добираемся до времени вылета и прилёта самого дешёвого рейса
+            min_departure = times[idx][0] if len(prices) > 0 else 'Нет данных'
+            min_arrival = times[idx][1] if len(prices) > 0 else 'Нет данных'
 
             # Создаем словарь с информацией о направлении на определённую дату
             date_info = {
                 'Дата': date.strftime("%d.%m.%Y"),
                 'Аэропорт вылета': ports[0] if len(ports) > 0 else 'Нет данных',
                 'Аэропорт прилёта': ports[1] if len(ports) > 0 else 'Нет данных',
+                'Время вылета': min_departure,
+                'Время прилёта': min_arrival,
                 'Авиакомпания(и)': ', '.join(flight_companies) if len(flight_companies) > 0 else 'Нет данных',
-                'Минимальная цена билета': min(prices) if len(prices) > 0 else 'Нет данных'
+                'Минимальная цена билета': min_price
             }
             flights_data.append(date_info)
         except TimeoutException:
