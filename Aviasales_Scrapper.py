@@ -29,7 +29,7 @@ directions = [(routes_dict[av], routes_dict[ap]) for av, ap in routes]
 
 # Генерация списка дат
 initial_date = datetime.today()
-end_date = initial_date + timedelta(days=90)
+end_date = initial_date + timedelta(days=3)
 date_list = [initial_date + timedelta(days=i) for i in range((end_date - initial_date).days + 1)]
 
 # Список с данными по каждому направлению и каждой дате
@@ -38,6 +38,7 @@ flights_data = []
 for route in directions:
     url = 'https://aviasales.ru/'
     driver.get(url)
+
 
     # Ожидание загрузки элементов
     wait = WebDriverWait(driver, 30)
@@ -99,18 +100,16 @@ for route in directions:
     # Переход по датам и сбор данных
     for date in date_list:
         try:
-            formatted_date = date.strftime("%d%m")
-            url = driver.current_url
-            pattern = r'(\d{2}\d{2})'
-            new_url = re.sub(pattern, str(formatted_date), url)
-            driver.get(new_url)
-            time.sleep(30)
+            if date != initial_date:
+                formatted_date = date.strftime("%d%m")
+                url = driver.current_url
+                pattern = r'(\d{2}\d{2})'
+                new_url = re.sub(pattern, str(formatted_date), url)
+                driver.get(new_url)
+                time.sleep(15)
 
             wait = WebDriverWait(driver, 50)
             wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[data-test-id="ticket-preview"]')))
-            time.sleep(7)
-
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(7)
 
             flights = driver.find_elements(By.CSS_SELECTOR, 'div[data-test-id="ticket-preview"]')
@@ -130,7 +129,7 @@ for route in directions:
                     airlines = flight.find_elements(By.CSS_SELECTOR, 'div.s__OxH0KVgAJVg2DNGFFx0s img')
                     names = [elem.get_attribute('alt') for elem in airlines]
 
-                    if 'Ямал' in names and len(names) > 1:
+                    if 'Ямал' in names:
                         continue
 
                     for i in names:
@@ -165,7 +164,7 @@ for route in directions:
                 'Минимальная цена билета': min_price
             }
             flights_data.append(date_info)
-        except TimeoutException:
+        except (TimeoutException, ValueError):
             print(f'Рейсы на дату {date.strftime("%d.%m.%Y")} не найдены.')
 
 flights_df = pd.DataFrame(flights_data)
